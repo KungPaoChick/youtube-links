@@ -50,6 +50,8 @@ class Get_chromedriver:
                     '\n[!!] chromedriver failed to install.',
                     colorama.Style.RESET_ALL)
         else:
+            if platform.system() == 'Linux':
+                os.system('chmod 755 chromedriver')
             print(colorama.Fore.GREEN,
                     f'\n[*] chromedriver v{version} successfully installed.',
                     colorama.Style.RESET_ALL)
