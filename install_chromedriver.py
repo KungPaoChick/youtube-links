@@ -14,7 +14,10 @@ class Identify_sys:
                       'Darwin': f'chromedriver_mac{Identify_sys().system_bit()}',
                       'Windows': f'chromedriver_win{Identify_sys().system_bit()}'}
         if platform.system() in op_systems:
-            return op_systems[platform.system()]
+            if platform.system() == 'Windows':
+                return 'chromedriver_win32'
+            else:
+                return op_systems[platform.system()]
         else:
             print(colorama.Fore.RED,
                     '[!!] Not Supported.', colorama.Style.RESET_ALL)
@@ -45,7 +48,7 @@ class Get_chromedriver:
             zip_ref.extractall()
         
         os.remove(driver_zip)
-        if not 'chromedriver' in [content.split()[0] for content in os.listdir()]:
+        if not 'chromedriver' in [content.split('.')[0] for content in os.listdir()]:
             print(colorama.Fore.RED,
                     '\n[!!] chromedriver failed to install.',
                     colorama.Style.RESET_ALL)
