@@ -5,7 +5,7 @@ from selenium.common.exceptions import WebDriverException
 import webdriver_conf
 import argparse
 import colorama
-import csv
+import json
 import os
 
 
@@ -18,7 +18,7 @@ class Connection:
 
     def conn(self):
         url = 'https://youtube.com/results?search_query='
-        Get_Links(self.browser_driver, url + '+'.join(self.query.split())).scrape()
+        Get_Links(self.browser_driver, url + '+'.join(self.query.split())).scrape(self.query)
 
 
 class Get_Links:
@@ -27,52 +27,65 @@ class Get_Links:
         self.driver = driver
         self.link = link
 
-    def dl_videos(self, video_links):
-        folder_name = 'videos'
-        if not os.path.exists(folder_name):
-            os.mkdir(folder_name)
-        
-        for dl_link in video_links:
-            if dl_link == None:
-                pass
-            else:
-                os.system(f'youtube-dl {dl_link}')
-
-    def scrape(self):
+    def scrape(self, search_query):
         self.driver.get(self.link)
         try:
-            with open('search_results.csv', 'w', encoding='utf-8') as f:
-                headers = ['Title', 'URL/Link']
-                writer = csv.writer(f, dialect='excel')
-                writer.writerow(headers)
-
+            with open('search_results.json', 'w', encoding='utf-8') as f:
                 container = WebDriverWait(self.driver, 0).until(
                     EC.presence_of_element_located(
                         (By.XPATH, '//*[@id="contents"]/ytd-item-section-renderer'))
                 )
 
+                results = {}
+                results['contents'] = []
+                results['contents'].append({})
                 titles, links = [], []
                 for link in container.find_elements_by_xpath('//*[@id="video-title"]'):
-                    writer.writerows([[link.text, link.get_attribute('href')]])
-                    titles.append(link.text)
-                    links.append(link.get_attribute('href'))
-                    print(colorama.Fore.YELLOW,f'[!] {link.text}',
-                            colorama.Style.RESET_ALL, link.get_attribute('href'))
+                    if link.get_attribute('href') == None:
+                        pass
+                    else:
+                        titles.append(link.text)
+                        links.append(link.get_attribute('href'))
+                        print(colorama.Fore.YELLOW,f'[!] {link.text}',
+                                colorama.Style.RESET_ALL, link.get_attribute('href'))
 
+                        for element in results['contents']:
+                            element[link.text] = link.get_attribute('href')
+
+                results['info'] = {'results': len(titles)}
+                json.dump(results, f, indent=2)
                 print(colorama.Fore.GREEN,
                         f'[*] {len(titles)} results.', colorama.Style.RESET_ALL)
-                
-                auth = input('Do you want to download these videos?[y/n] ')
-                if auth.casefold() == 'y' or auth.casefold() == 'yes':
-                    Get_Links(self.driver, self.link).dl_videos(links)
-                else:
-                    print('Abort!')
+
         except WebDriverException as err:
             print(colorama.Fore.RED,
               '[!!] WebDriver Failed To Function!', err, colorama.Style.RESET_ALL)
-            Get_Links(self.driver, self.link).scrape()
+            Get_Links(self.driver, self.link).scrape(search_query)
         finally:
             self.driver.quit()
+
+
+def dl_videos():
+    folder_name = 'videos'
+    origin = os.getcwd()
+    if not os.path.exists(folder_name):
+        os.mkdir(folder_name)
+
+    with open('search_results.json', 'r', encoding='utf-8') as j_source:
+        source = json.load(j_source)
+
+    for dict in source['contents']:
+        if args.download:
+            os.system('cd videos')
+            for video_title in args.download:
+                if video_title in dict:
+                    print(dict[video_title])
+
+        if args.downloadall:
+            os.chdir(os.path.join(origin, folder_name))
+            for url in dict.values():
+                os.system(f'youtubedl {url}')
+            os.chdir(origin)
 
 
 if __name__ == '__main__':
@@ -83,6 +96,15 @@ if __name__ == '__main__':
                         nargs=1, metavar='SEARCH',
                         action='store',
                         help='Searches for top related videos based on input.')
+
+    parser.add_argument('-d', '--download',
+                        nargs='+', metavar='DOWNLOAD',
+                        action='store',
+                        help='Downloads the video/s from search_results.json.')
+
+    parser.add_argument('-da', '--downloadall',
+                        action='store_true',
+                        help='Downloads all videos from search_results.json')
 
     args = parser.parse_args()
     if args.search:
@@ -95,3 +117,9 @@ if __name__ == '__main__':
         except WebDriverException as err:
             print(colorama.Fore.RED,
                 f'No WebDriver Found For Chrome!', err, colorama.Style.RESET_ALL)
+
+    if args.download:
+        dl_videos()
+
+    if args.downloadall:
+        dl_videos()
