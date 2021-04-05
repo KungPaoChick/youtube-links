@@ -17,8 +17,7 @@ class Connection:
 
     def conn(self):
         url = 'https://youtube.com/results?search_query='
-        if self.browser_driver.get(url + '+'.join(self.query.split())) == None:
-            Get_Links(self.browser_driver, url + '+'.join(self.query.split())).scrape()
+        Get_Links(self.browser_driver, url + '+'.join(self.query.split())).scrape()
 
 
 class Get_Links:
