@@ -76,10 +76,10 @@ def dl_videos():
 
     for dict in source['contents']:
         if args.download:
-            os.chir(os.path.join(origin, folder_name))
+            os.chdir(os.path.join(origin, folder_name))
             for video_title in args.download:
                 if video_title in dict:
-                    print(dict[video_title])
+                    os.system(f'youtube-dl {dict[video_title]}')
             os.chdir(origin)
 
         if args.downloadall:
