@@ -6,6 +6,7 @@ import webdriver_conf
 import argparse
 import colorama
 import csv
+import os
 
 
 class Connection:
@@ -26,6 +27,17 @@ class Get_Links:
         self.driver = driver
         self.link = link
 
+    def dl_videos(self, video_links):
+        folder_name = 'videos'
+        if not os.path.exists(folder_name):
+            os.mkdir(folder_name)
+        
+        for dl_link in video_links:
+            if dl_link == None:
+                pass
+            else:
+                os.system(f'youtube-dl {dl_link}')
+
     def scrape(self):
         self.driver.get(self.link)
         try:
@@ -39,15 +51,22 @@ class Get_Links:
                         (By.XPATH, '//*[@id="contents"]/ytd-item-section-renderer'))
                 )
 
-                length = []
+                titles, links = [], []
                 for link in container.find_elements_by_xpath('//*[@id="video-title"]'):
                     writer.writerows([[link.text, link.get_attribute('href')]])
-                    length.append(link.text)
+                    titles.append(link.text)
+                    links.append(link.get_attribute('href'))
                     print(colorama.Fore.YELLOW,f'[!] {link.text}',
                             colorama.Style.RESET_ALL, link.get_attribute('href'))
 
                 print(colorama.Fore.GREEN,
-                        f'[*] {len(length)} results.', colorama.Style.RESET_ALL)
+                        f'[*] {len(titles)} results.', colorama.Style.RESET_ALL)
+                
+                auth = input('Do you want to download these videos?[y/n] ')
+                if auth.casefold() == 'y' or auth.casefold() == 'yes':
+                    Get_Links(self.driver, self.link).dl_videos(links)
+                else:
+                    print('Abort!')
         except WebDriverException as err:
             print(colorama.Fore.RED,
               '[!!] WebDriver Failed To Function!', err, colorama.Style.RESET_ALL)
