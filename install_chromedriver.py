@@ -12,12 +12,9 @@ class Identify_sys:
     def system(self):
         op_systems = {'Linux': f'chromedriver_linux{Identify_sys().system_bit()}',
                       'Darwin': f'chromedriver_mac{Identify_sys().system_bit()}',
-                      'Windows': f'chromedriver_win{Identify_sys().system_bit()}'}
+                      'Windows': 'chromedriver_win32'}
         if platform.system() in op_systems:
-            if platform.system() == 'Windows':
-                return 'chromedriver_win32'
-            else:
-                return op_systems[platform.system()]
+            return op_systems[platform.system()]
         else:
             print(colorama.Fore.RED,
                     '[!!] Not Supported.', colorama.Style.RESET_ALL)
@@ -46,14 +43,14 @@ class Get_chromedriver:
         driver_zip = wget.download(download_url, 'chromedriver.zip')
         with zipfile.ZipFile(driver_zip) as zip_ref:
             zip_ref.extractall()
-        
+
         os.remove(driver_zip)
         if not 'chromedriver' in [content.split('.')[0] for content in os.listdir()]:
             print(colorama.Fore.RED,
                     '\n[!!] chromedriver failed to install.',
                     colorama.Style.RESET_ALL)
         else:
-            if platform.system() == 'Linux':
+            if platform.system() in ['Linux', 'Darwin']:
                 os.system('chmod 755 chromedriver')
             print(colorama.Fore.GREEN,
                     f'\n[*] chromedriver v{version} successfully installed.',
