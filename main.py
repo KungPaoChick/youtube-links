@@ -117,7 +117,7 @@ def dl_videos():
 def convert(seconds):
     min, sec = divmod(seconds, 60)
     hour, min = divmod(min, 60)
-    return "%d:%02d:%02d" & (hour, min, sec)
+    return "%d:%02d:%02d" % (hour, min, sec)
 
 
 if __name__ == '__main__':
