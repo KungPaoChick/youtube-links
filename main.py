@@ -8,6 +8,7 @@ import argparse
 import colorama
 import json
 import os
+import time
 
 
 class Connection:
@@ -96,6 +97,7 @@ def dl_videos():
             os.chdir(origin)
 
         if args.downloadall:
+            start = time.time()
             os.chdir(os.path.join(origin, folder_name))
             for title in dict:
                 with yd.YoutubeDL(ydl_opts) as get:
@@ -106,6 +108,16 @@ def dl_videos():
                         print(colorama.Fore.GREEN, f'[*] {title} has been downloaded',
                                 colorama.Style.RESET_ALL)
             os.chdir(origin)
+            end = time.time()
+            print(colorama.Fore.YELLOW,
+                    f'\n\n[!] Download Process took: {convert(end-start)}',
+                    colorama.Style.RESET_ALL)
+
+
+def convert(seconds):
+    min, sec = divmod(seconds, 60)
+    hour, min = divmod(min, 60)
+    return "%d:%02d:%02d" & (hour, min, sec)
 
 
 if __name__ == '__main__':
