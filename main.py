@@ -2,7 +2,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException
-import youtube_dl as yd
+import youtube_dl as ydl
 import webdriver_conf
 import argparse
 import colorama
@@ -66,52 +66,62 @@ class Get_Links:
             self.driver.quit()
 
 
-def dl_videos():
-    folder_name = 'videos'
-    origin = os.getcwd()
-    if not os.path.exists(folder_name):
-        os.mkdir(folder_name)
+class Download_Videos:
 
-    with open('search_results.json', 'r', encoding='utf-8') as j_source:
-        source = json.load(j_source)
+    def dl_process(self, video_title, url):
+        ydl_opts = {}
+        with ydl.YoutubeDL(ydl_opts) as get:
+            if not get.download([url]) == 0:
+                print(colorama.Fore.RED,
+                        f'[!!] {video_title} failed to download',
+                        colorama.Style.RESET_ALL)
+            else:
+                print(colorama.Fore.GREEN,
+                        f'[*] {video_title} has been downloaded',
+                        colorama.Style.RESET_ALL)
 
-    ydl_opts = {}
-    for dict in source['contents']:
-        if args.download:
-            os.chdir(os.path.join(origin, folder_name))
-            for video_title in args.download:
-                if not video_title in dict:
-                    print(colorama.Fore.RED,
-                            f'[!!] {video_title} does not exist',
-                            colorama.Style.RESET_ALL)
-                else:
-                    with yd.YoutubeDL(ydl_opts) as get:
-                        if not get.download([dict[video_title]]) == 0:
-                            print(colorama.Fore.RED,
-                                    f'[!!] {video_title} failed to download',
+    def dl_videos(self):
+        folder_name = 'videos'
+        origin = os.getcwd()
+        if not os.path.exists(folder_name):
+            os.mkdir(folder_name)
+
+        with open('search_results.json', 'r', encoding='utf-8') as j_source:
+            source = json.load(j_source)
+
+        for dict in source['contents']:
+            if args.download:
+                os.chdir(os.path.join(origin, folder_name))
+                for video_title in args.download:
+                    if video_title.startswith('https:'):
+                        url = video_title
+                        if not url in dict.values():
+                            print(colorama.Fore.RED, f'[!!] {url} does not exist',
                                     colorama.Style.RESET_ALL)
                         else:
-                            print(colorama.Fore.GREEN,
-                                    f'[*] {video_title} has been downloaded',
-                                    colorama.Style.RESET_ALL)
-            os.chdir(origin)
-
-        if args.downloadall:
-            start = time.time()
-            os.chdir(os.path.join(origin, folder_name))
-            for title in dict:
-                with yd.YoutubeDL(ydl_opts) as get:
-                    if not get.download([dict[title]]) == 0:
-                        print(colorama.Fore.RED, f'[!!] {title} failed to download',
-                                colorama.Style.RESET_ALL)
+                            for element in dict:
+                                if url == dict[element]:
+                                    print(colorama.Fore.GREEN, f'[*] Downloading: {element}',
+                                            colorama.Style.RESET_ALL)
+                                    Download_Videos().dl_process(element, url)
                     else:
-                        print(colorama.Fore.GREEN, f'[*] {title} has been downloaded',
-                                colorama.Style.RESET_ALL)
-            os.chdir(origin)
-            end = time.time()
-            print(colorama.Fore.YELLOW,
-                    f'\n\n[!] Download Process took: {convert(end-start)}',
-                    colorama.Style.RESET_ALL)
+                        if not video_title in dict:
+                            print(colorama.Fore.RED, f'[!!] {video_title} does not exist',
+                                    colorama.Style.RESET_ALL)
+                        else:
+                            Download_Videos().dl_process(video_title, dict[video_title])
+                os.chdir(origin)
+
+            if args.downloadall:
+                start = time.time()
+                os.chdir(os.path.join(origin, folder_name))
+                for title in dict:
+                    Download_Videos().dl_process(title, dict[title])
+                os.chdir(origin)
+                end = time.time()
+                print(colorama.Fore.YELLOW,
+                        f'\n\n[!] Download Process took: {convert(end-start)}',
+                        colorama.Style.RESET_ALL)
 
 
 def convert(seconds):
@@ -150,8 +160,5 @@ if __name__ == '__main__':
             print(colorama.Fore.RED,
                 f'No WebDriver Found For Chrome!', err, colorama.Style.RESET_ALL)
 
-    if args.download:
-        dl_videos()
-
-    if args.downloadall:
-        dl_videos()
+    if args.download or args.downloadall:
+        Download_Videos().dl_videos()
